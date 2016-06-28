@@ -1,4 +1,5 @@
 require "know_it_all/version"
+require "know_it_all/base"
 
 module KnowItAll
   SUFFIX = "Policy"
