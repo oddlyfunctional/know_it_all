@@ -1,6 +1,6 @@
 require "know_it_all/version"
 require "know_it_all/base"
-require "know_it_all/controller_wrapper"
+require "know_it_all/authorizer"
 
 module KnowItAll
   SUFFIX = "Policy"

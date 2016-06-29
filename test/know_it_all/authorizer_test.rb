@@ -1,17 +1,17 @@
 require 'test_helper'
 
-describe KnowItAll::ControllerWrapper do
+describe KnowItAll::Authorizer do
   it "includes the KnowItAll module" do
-    expect(KnowItAll::ControllerWrapper.include?(KnowItAll)).must_equal true
+    expect(KnowItAll::Authorizer.include?(KnowItAll)).must_equal true
   end
 
   it "delegates controller_path to the controller" do
     controller = MiniTest::Mock.new
     controller.expect(:controller_path, "mock")
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.controller_path).must_equal "mock"
+    expect(authorizer.controller_path).must_equal "mock"
     controller.verify
   end
 
@@ -19,9 +19,9 @@ describe KnowItAll::ControllerWrapper do
     controller = MiniTest::Mock.new
     controller.expect(:action_name, "index")
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.action_name).must_equal "index"
+    expect(authorizer.action_name).must_equal "index"
     controller.verify
   end
 
@@ -29,9 +29,9 @@ describe KnowItAll::ControllerWrapper do
     controller = MiniTest::Mock.new
     controller.expect(:policy, :policy)
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.policy).must_equal :policy
+    expect(authorizer.policy).must_equal :policy
     controller.verify
   end
 
@@ -39,9 +39,9 @@ describe KnowItAll::ControllerWrapper do
     controller = MiniTest::Mock.new
     controller.expect(:policy_class, :policy_class)
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.policy_class).must_equal :policy_class
+    expect(authorizer.policy_class).must_equal :policy_class
     controller.verify
   end
 
@@ -49,9 +49,9 @@ describe KnowItAll::ControllerWrapper do
     controller = MiniTest::Mock.new
     controller.expect(:policy_name, :policy_name)
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.policy_name).must_equal :policy_name
+    expect(authorizer.policy_name).must_equal :policy_name
     controller.verify
   end
 
@@ -60,9 +60,9 @@ describe KnowItAll::ControllerWrapper do
     controller.expect(:controller_path, "mock")
     controller.expect(:action_name, "index")
 
-    wrapper = KnowItAll::ControllerWrapper.new(controller)
+    authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(wrapper.policy_name).must_equal "MockPolicy::Index"
+    expect(authorizer.policy_name).must_equal "MockPolicy::Index"
     controller.verify
   end
 end

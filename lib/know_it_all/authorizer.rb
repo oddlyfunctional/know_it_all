@@ -1,5 +1,5 @@
 module KnowItAll
-  class ControllerWrapper
+  class Authorizer
     include KnowItAll
 
     def initialize(controller)
