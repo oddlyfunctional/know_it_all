@@ -9,6 +9,53 @@ describe KnowItAll do
     it "returns true when use case is invalid" do
       expect(controller.authorize?(invalid_argument)).must_equal false
     end
+
+    describe "overrides" do
+      it "allows to override policy" do
+        policy = MiniTest::Mock.new
+        policy.expect(:authorize?, nil)
+
+        controller.authorize?(valid_argument, policy: policy)
+        policy.verify
+      end
+
+      def mock_policy_class(policy_class)
+        policy_class.expect(:new, MockPolicy::Index.new(valid_argument), [valid_argument])
+      end
+
+      it "allows to override policy_class" do
+        policy_class = MiniTest::Mock.new
+        mock_policy_class(policy_class)
+
+        controller.authorize?(valid_argument, policy_class: policy_class)
+        policy_class.verify
+      end
+
+      it "allows to override policy_name" do
+        AnotherPolicy = MiniTest::Mock.new
+        mock_policy_class(AnotherPolicy)
+
+        controller.authorize?(valid_argument, policy_name: "AnotherPolicy")
+        AnotherPolicy.verify
+      end
+
+      it "allows to override controller_path" do
+        module YetAnotherPolicy; end
+        YetAnotherPolicy::Index = MiniTest::Mock.new
+        mock_policy_class(YetAnotherPolicy::Index)
+
+        controller.authorize?(valid_argument, controller_path: "yet_another")
+        YetAnotherPolicy::Index.verify
+      end
+
+      it "allows to override action_name" do
+        MockPolicy::Show = MiniTest::Mock.new
+        mock_policy_class(MockPolicy::Show)
+
+        controller.authorize?(valid_argument, action_name: "show")
+        MockPolicy::Show.verify
+      end
+    end
   end
 
   describe "#authorize" do
