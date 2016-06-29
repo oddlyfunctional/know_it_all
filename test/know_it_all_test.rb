@@ -31,7 +31,7 @@ describe KnowItAll do
       end
 
       def mock_policy_class(policy_class)
-        policy_class.expect(:new, MockPolicy::Index.new(valid_argument), [valid_argument])
+        policy_class.expect(:new, MockPolicies::Index.new(valid_argument), [valid_argument])
       end
 
       it "allows to override policy_class" do
@@ -51,20 +51,20 @@ describe KnowItAll do
       end
 
       it "allows to override controller_path" do
-        module YetAnotherPolicy; end
-        YetAnotherPolicy::Index = MiniTest::Mock.new
-        mock_policy_class(YetAnotherPolicy::Index)
+        module YetAnotherPolicies; end
+        YetAnotherPolicies::Index = MiniTest::Mock.new
+        mock_policy_class(YetAnotherPolicies::Index)
 
         controller.authorize(valid_argument, controller_path: "yet_another")
-        YetAnotherPolicy::Index.verify
+        YetAnotherPolicies::Index.verify
       end
 
       it "allows to override action_name" do
-        MockPolicy::Show = MiniTest::Mock.new
-        mock_policy_class(MockPolicy::Show)
+        MockPolicies::Show = MiniTest::Mock.new
+        mock_policy_class(MockPolicies::Show)
 
         controller.authorize(valid_argument, action_name: "show")
-        MockPolicy::Show.verify
+        MockPolicies::Show.verify
       end
     end
   end
@@ -76,7 +76,7 @@ describe KnowItAll do
 
     it "raises an error when use case is invalid" do
       error = expect { controller.authorize!(invalid_argument) }.must_raise KnowItAll::NotAuthorized
-      expect(error.policy).must_be_kind_of MockPolicy::Index
+      expect(error.policy).must_be_kind_of MockPolicies::Index
     end
   end
 
@@ -118,11 +118,11 @@ describe KnowItAll do
 
   describe "#policy_name" do
     it "finds policies in the root scope" do
-      expect(controller.policy_name).must_equal "MockPolicy::Index"
+      expect(controller.policy_name).must_equal "MockPolicies::Index"
     end
 
     it "finds policies nested under modules" do
-      expect(controller("nested/under/mock").policy_name).must_equal "Nested::Under::MockPolicy::Index"
+      expect(controller("nested/under/mock").policy_name).must_equal "Nested::Under::MockPolicies::Index"
     end
   end
 
@@ -150,7 +150,7 @@ describe KnowItAll do
     def render; end
   end
 
-  module MockPolicy
+  module MockPolicies
     class Index
       attr_accessor :argument
 

@@ -62,7 +62,7 @@ describe KnowItAll::Authorizer do
 
     authorizer = KnowItAll::Authorizer.new(controller)
 
-    expect(authorizer.policy_name).must_equal "MockPolicy::Index"
+    expect(authorizer.policy_name).must_equal "MockPolicies::Index"
     controller.verify
   end
 end
