@@ -17,7 +17,7 @@ The assumption made is that each action has its own requirements based on the cu
 - The registered address must be within a determined radius;
 - The cart must contain at least $10 in items;
 - The chosen items must be available for delivery;
-- The store must be opened.
+- The store must be open.
 
 It'd be very helpful for a developer consuming this API if, in case of failure, the API returned an appropriate error message explaining exactly what when wrong, instead of an empty `403 Forbidden`. Performing this manually is easy, but quickly polutes the action's code:
 
@@ -29,14 +29,14 @@ class OrdersController < ApplicationController
     return error("Registered address is outside the range") unless address_in_range?(current_user.address)
     return error("Cart must contain at least $10 in items") unless cart_has_minimum?(cart)
     return error("Some of the items are not available") unless items_available?(cart.items)
-    return error("The store is closed") unless store.opened?
+    return error("The store is closed") unless store.open?
 
     # Here finally starts what the action actually does
     order = Order.create(order_params)
     if order.save
       render json: order, status: :created
     else
-      render json: { errors: order.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: order.errors }, status: :unprocessable_entity
     end
   end
 
@@ -53,14 +53,14 @@ It's much more readable, as well as easier to test and extend, if all of those r
 ```ruby
 class OrdersController < ApplicationController
   def create
-    policy = OrdersPolicy::Create.new(current_user, cart, store)
-    return render json: { errors: authorization.errors } unless policy.authorize?
+    policy = OrdersPolicies::Create.new(current_user, cart, store)
+    return render json: { errors: policy.errors } unless policy.authorize?
 
     order = Order.create(order_params)
     if order.save
       render json: order, status: :created
     else
-      render json: { errors: order.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: order.errors }, status: :unprocessable_entity
     end
   end
 end
@@ -88,6 +88,97 @@ Or install it yourself as:
 
 There are two steps to using this gem: creating and using policies:
 
+### Creating policies
+
+A policy is simply a class obeys some rules:
+
+* It is initialized with the same arguments that are passed to the `authorize`, `authorize!` and `authorize?` methods in the controller;
+* It responds to a method `errors`;
+* Calling `errors` returns an object that responds to the method `empty?` and is serializable. It's usually an array, but it could easily be an `ActiveModel::Errors`.
+
+Here's an example:
+
+```ruby
+module OrdersPolicies
+  class Create
+    def initialize(current_user, cart, store)
+      @current_user = current_user
+      @cart = cart
+      @store = store
+    end
+
+    def errors
+      @errors = []
+      @errors << "User must be signed in" unless @current_user
+      @errors << "User must have a registered address" unless @current_user.address
+      @errors << "Registered address is outside the range" unless address_in_range?(current_user.address)
+      @errors << "Cart must contain at least $10 in items" unless cart_has_minimum?(@cart)
+      @errors << "Some of the items are not available" unless items_available?(@cart.items)
+      @errors << "The store is closed" unless @store.open?
+    end
+  end
+end
+```
+
+Using `ActiveModel::Validations`:
+
+```ruby
+module OrdersPolicies
+  class Create
+    includes ActiveModel::Validations
+
+    validates_presence_of :current_user, :address
+    validate :address_in_range
+    validate :cart_has_minimum
+    validate :items_are_available
+    validate :store_is_open
+
+    def initialize(current_user, cart, store)
+      @current_user = current_user
+      @cart = cart
+      @store = store
+
+      run_validations! # Populates the `ActiveModel::Errors`
+    end
+  end
+end
+```
+
+#### Naming convention
+
+The convention `KnowItAll` uses for defining the name of the constant containing the appropriate policy is the following:
+
+* Based on the `controller_path` method on the controller, it builds a module name by appending the `Policies` suffix: `"orders"` becomes `"OrdersPolicies"` and `"admin/dashboard_panel"` becomes `"Admin::DashboardPanelPolicies"`.
+* Based on the `action_name` method on the controller, it builds a class name: `"index"` becomes `"Index"`, `"increase_inventory"` becomes `"IncreaseInventory"`.
+* By appending the class name to the module name, it tries to find that constant: with `controller_path == "orders"` and `action_name == "Index"`, it looks for a `OrdersPolicies::Index` constant.
+
+For more details about how the module and class names are converted, please check the [`ActiveSupport::Inflector#camelize`](http://api.rubyonrails.org/classes/ActiveSupport/Inflector.html#method-i-camelize) method.
+
+#### Helper class
+
+If you don't want to write your own policy from the scratch, I've also provided a minimalistic base policy:
+
+```ruby
+module OrdersPolicies
+  class Create < KnowItAll::Base
+    assert :user_signed_in?, "User must be signed in" 
+    assert :address_present?, "User must have a registered address" 
+    assert :address_in_range?, "Registered address is outside the range" 
+    assert :cart_has_minimum?, "Cart must contain at least $10 in items" 
+    assert :items_available?, "Some of the items are not available" 
+    assert :store_open?, "The store is closed" 
+
+    def initialize(current_user, cart, store)
+      @current_user = current_user
+      @cart = cart
+      @store = store
+    end
+  end
+end
+```
+
+The class method `assert` expects a `Symbol` representing the name of a predicate and a `String` containing the error message in case the predicate fails. The default `errors` method returns an array containing the messages for all the assertions that didn't pass.
+
 ### Using policies
 
 The simplest approach is to include the `KnowItAll` module in the controller you want to perform the validation. For this example, let's make the helpers available to all controllers by including it in the `ApplicationController`:
@@ -103,19 +194,19 @@ After that, we can use the helpers in any controller that inherits from `Applica
 ```ruby
 class OrdersController < ApplicationController
   def create
-    authorize current_user, cart, store
+    authorize! current_user, cart, store
 
     order = Order.create(order_params)
     if order.save
       render json: order, status: :created
     else
-      render json: { errors: order.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: order.errors }, status: :unprocessable_entity
     end
   end
 end
 ```
 
-### What to do when the authorization failed
+#### What happens when not authorized
 
 The `authorize` method raises a `KnowItAll::NotAuthorized` exception in case the authorization has failed, and contains the instance of the policy used to perform the validation:
 
@@ -134,6 +225,140 @@ This pattern is so common that I've wrote a method that does exactly that:
 class ApplicationController < ActionController::Base
   include KnowItAll
   rescue_from KnowItAll::NotAuthorized, with: :render_not_authorized
+end
+```
+
+Alternatively, you can use the bangless form of the authorization method (`authorize`), which doesn't raise an exception and return an array of errors:
+
+```ruby
+class OrdersController < ApplicationController
+  def create
+    errors = authorize current_user, cart, store
+    if errors.empty?
+      order = Order.create(order_params)
+      if order.save
+        render json: order, status: :created
+      else
+        render json: { errors: order.errors }, status: :unprocessable_entity
+      end
+    else
+      return render json: { errors: errors }, status: :forbidden
+    end
+  end
+end
+```
+
+#### Querying authorizations in the view
+
+You can use the predicate `authorize?` to make decisions based on future authorizations in your views. First you need to make the method available as a helper:
+
+```ruby
+class ApplicationController < ActionController::Base
+  include KnowItAll
+  helper_method :authorize?
+end
+```
+
+Then use it in your views, passing the appropriate overrides (more about that here):
+
+```erb
+<%= form_for @order do |f| %>
+  <!-- Form fields -->
+
+  <%= f.button "Place order", disabled: authorize?(
+                                          @current_user,
+                                          @cart,
+                                          @store,
+                                          controller_path: "orders",
+                                          action_name: "create"
+                                        ) %>
+<% end %>
+```
+
+#### Avoiding conflicts in the controller
+
+It's possible that you're already using methods with the same names as the ones in the `KnowItAll` module: `authorize`, `authorized?`, `authorize!`, `policy`, `policy_class`, `policy_name`, `render_not_authorized` or `verify_authorized`. In that case, the solution is to include the module in another class, and use it as a collaborator. The only methods `KnowItAll` needs to find the correct policies are `controller_path` and `action_name`:
+
+```ruby
+class Authorizer
+  include KnowItAll
+  attr_reader :controller_path, :action_name
+
+  def initialize(controller)
+    @controller_path = controller.controller_path
+    @action_name = controller.action_name
+  end
+end
+
+class ApplicationController < ActionController::Base
+  protected
+
+    def authorizer
+      Authorizer.new(self)
+    end
+end
+
+class OrdersController < ApplicationController
+  def create
+    authorizer.authorize! current_user, cart, store
+
+    # Action's code here
+  end
+end
+```
+
+In that case, I've made available a `KnowItAll::Authorizer` class that does exactly that:
+
+```ruby
+class ApplicationController < ActionController::Base
+  protected
+
+    def authorizer
+      KnowItAll::Authorizer.new(self)
+    end
+end
+```
+
+#### Overrides
+
+It's possible to override any of the methods `KnowItAll` uses to define the appropriate policy. You can do that in the controller:
+
+```ruby
+class OrdersController < ApplicationController
+  def create
+    authorize! current_user, cart, store
+
+    # Action's code here
+  end
+
+  def policy_name
+    "OrdersPolicies::Checkout"
+  end
+end
+```
+
+Or when calling the `authorize`, `authorize?` or `authorize!` methods:
+
+```ruby
+class OrdersController < ApplicationController
+  def create
+    authorize! current_user, cart, store, policy_name: "OrdersPolicies::Checkout"
+
+    # Action's code here
+  end
+end
+```
+
+The available overrides are: `controller_path`, `action_name`, `policy_name`, `policy_class` and `policy` (instance of the policy).
+
+## Enforcing authorization checks
+
+While developing a simple feature, it's easy to forget to perform an authorization check. It's helpful during development to know when you forget it, so I've provided a `verify_authorized` method that raises a `KnowItAll::AuthorizationNotPerformedError` when there were no calls to any one of the authorization methods: `authorize`, `authorize?` or `authorize!`:
+
+```ruby
+class ApplicationController < ActionController::Base
+  include KnowItAll
+  after_action :verify_authorized
 end
 ```
 
