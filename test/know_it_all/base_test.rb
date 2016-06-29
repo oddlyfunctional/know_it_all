@@ -12,17 +12,6 @@ describe KnowItAll::Base do
     end
   end
 
-  describe "#authorize?" do
-    it "doesn't authorize when there's errors" do
-      expect(policy.authorize?).must_equal false
-    end
-
-    it "authorizes when there's no errors" do
-      policy.name = "Something"
-      expect(policy.authorize?).must_equal true
-    end
-  end
-
   def mock_policy
     Class.new(KnowItAll::Base) do
       attr_accessor :name

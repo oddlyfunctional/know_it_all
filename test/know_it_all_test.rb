@@ -6,16 +6,27 @@ describe KnowItAll do
       expect(controller.authorize?(valid_argument)).must_equal true
     end
 
-    it "returns true when use case is invalid" do
+    it "returns false when use case is invalid" do
       expect(controller.authorize?(invalid_argument)).must_equal false
+    end
+
+  end
+
+  describe "#authorize" do
+    it "returns an empty array when use case is valid" do
+      expect(controller.authorize(valid_argument)).must_equal []
+    end
+
+    it "returns an array containing the errors when use case is invalid" do
+      expect(controller.authorize(invalid_argument)).must_equal ["Invalid argument: :invalid_argument"]
     end
 
     describe "overrides" do
       it "allows to override policy" do
         policy = MiniTest::Mock.new
-        policy.expect(:authorize?, nil)
+        policy.expect(:errors, [])
 
-        controller.authorize?(valid_argument, policy: policy)
+        controller.authorize(valid_argument, policy: policy)
         policy.verify
       end
 
@@ -27,7 +38,7 @@ describe KnowItAll do
         policy_class = MiniTest::Mock.new
         mock_policy_class(policy_class)
 
-        controller.authorize?(valid_argument, policy_class: policy_class)
+        controller.authorize(valid_argument, policy_class: policy_class)
         policy_class.verify
       end
 
@@ -35,7 +46,7 @@ describe KnowItAll do
         AnotherPolicy = MiniTest::Mock.new
         mock_policy_class(AnotherPolicy)
 
-        controller.authorize?(valid_argument, policy_name: "AnotherPolicy")
+        controller.authorize(valid_argument, policy_name: "AnotherPolicy")
         AnotherPolicy.verify
       end
 
@@ -44,7 +55,7 @@ describe KnowItAll do
         YetAnotherPolicy::Index = MiniTest::Mock.new
         mock_policy_class(YetAnotherPolicy::Index)
 
-        controller.authorize?(valid_argument, controller_path: "yet_another")
+        controller.authorize(valid_argument, controller_path: "yet_another")
         YetAnotherPolicy::Index.verify
       end
 
@@ -52,19 +63,19 @@ describe KnowItAll do
         MockPolicy::Show = MiniTest::Mock.new
         mock_policy_class(MockPolicy::Show)
 
-        controller.authorize?(valid_argument, action_name: "show")
+        controller.authorize(valid_argument, action_name: "show")
         MockPolicy::Show.verify
       end
     end
   end
 
-  describe "#authorize" do
+  describe "#authorize!" do
     it "doesn't raise an error when use case is valid" do
-      expect { controller.authorize(valid_argument) }.wont_raise
+      expect { controller.authorize!(valid_argument) }.wont_raise
     end
 
     it "raises an error when use case is invalid" do
-      error = expect { controller.authorize(invalid_argument) }.must_raise KnowItAll::NotAuthorized
+      error = expect { controller.authorize!(invalid_argument) }.must_raise KnowItAll::NotAuthorized
       expect(error.policy).must_be_kind_of MockPolicy::Index
     end
   end
@@ -90,17 +101,17 @@ describe KnowItAll do
   end
 
   describe "#verify_authorized" do
-    it "doesn't raise error when #authorize? was called" do
-      controller.authorize?(valid_argument)
-      expect { controller.verify_authorized }.wont_raise
-    end
-
     it "doesn't raise error when #authorize was called" do
       controller.authorize(valid_argument)
       expect { controller.verify_authorized }.wont_raise
     end
 
-    it "raises error when neither #authorize nor #authorize? were called" do
+    it "doesn't raise error when #authorize! was called" do
+      controller.authorize!(valid_argument)
+      expect { controller.verify_authorized }.wont_raise
+    end
+
+    it "raises error when neither #authorize nor #authorize were called" do
       expect { controller.verify_authorized }.must_raise KnowItAll::AuthorizationNotPerformedError
     end
   end
@@ -145,10 +156,6 @@ describe KnowItAll do
 
       def initialize(argument)
         self.argument = argument
-      end
-
-      def authorize?
-        errors.empty?
       end
 
       def errors

@@ -5,7 +5,11 @@ require "know_it_all/controller_wrapper"
 module KnowItAll
   SUFFIX = "Policy"
 
-  def authorize?(*args,
+  def authorize?(*args)
+    authorize(*args).empty?
+  end
+
+  def authorize(*args,
                  controller_path: self.controller_path,
                  action_name: self.action_name,
                  policy_name: self.policy_name(
@@ -16,10 +20,10 @@ module KnowItAll
                  policy: self.policy(*args, policy_class: policy_class)
                 )
     @_authorization_performed = true
-    policy.authorize?
+    policy.errors
   end
 
-  def authorize(*args)
+  def authorize!(*args)
     raise NotAuthorized.new(policy(*args)) unless authorize?(*args)
   end
 

@@ -10,9 +10,5 @@ module KnowItAll
         .select { |method_name, _| !self.send(method_name) }
         .map { |_, message| message }
     end
-
-    def authorize?
-      errors.empty?
-    end
   end
 end
