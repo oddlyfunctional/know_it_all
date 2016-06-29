@@ -8,6 +8,26 @@ More of an architectural pattern for API-focused authorization than properly a d
 
 If your application needs to validate pre-requisites before performing certain actions, at the same time providing helpful error messages for the API's clients, all that while using regular magic-less Ruby and object oriented design patterns, KnowItAll is your friend.
 
+Table of Contents
+=================
+
+  * [KnowItAll](#knowitall)
+    * [Why?](#why)
+    * [Installation](#installation)
+    * [Usage](#usage)
+      * [Creating policies](#creating-policies)
+        * [Naming convention](#naming-convention)
+        * [Helper class](#helper-class)
+      * [Using policies](#using-policies)
+        * [What happens when not authorized](#what-happens-when-not-authorized)
+        * [Querying authorizations in the view](#querying-authorizations-in-the-view)
+        * [Avoiding conflicts in the controller](#avoiding-conflicts-in-the-controller)
+        * [Overrides](#overrides)
+    * [Enforcing authorization checks](#enforcing-authorization-checks)
+    * [Development](#development)
+    * [Contributing](#contributing)
+    * [License](#license)
+
 ## Why?
 
 The assumption made is that each action has its own requirements based on the current context. Some may be related to the current user's permissions in the system, others with the parameters sent, and others yet may even have nothing to do with any input received. Let's say you're building the API for a food delivery app. To be able to checkout, you need to validate the following requirements:
