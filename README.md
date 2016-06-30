@@ -13,6 +13,7 @@ Table of Contents
 
   * [KnowItAll](#knowitall)
     * [Why?](#why)
+    * [Why not just Pundit?](#why-not-just-pundit)
     * [Installation](#installation)
     * [Usage](#usage)
       * [Creating policies](#creating-policies)
@@ -87,6 +88,10 @@ end
 ```
 
 That's exactly the architectural pattern encouraged by this gem. By including a small set of helpers, it makes it extremely simple to perform complex validations and provide helpful feedback through the API.
+
+## Why not just Pundit?
+
+Pundit is great! I've been using it for years and I love it, but its model-focused permissions and structural pattern makes it difficult and awkward to perform validations on scenarios that need multiple arguments and show appropriate error messages for the API's clients. Based on modifications I've made when using Pundit in some projects, I created this gem.
 
 ## Installation
 
