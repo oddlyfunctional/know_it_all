@@ -150,7 +150,7 @@ Using `ActiveModel::Validations`:
 ```ruby
 module OrdersPolicies
   class Create
-    includes ActiveModel::Validations
+    include ActiveModel::Validations
 
     validates_presence_of :current_user, :address
     validate :address_in_range
