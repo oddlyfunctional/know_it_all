@@ -233,7 +233,7 @@ end
 
 #### What happens when not authorized
 
-The `authorize` method raises a `KnowItAll::NotAuthorized` exception in case the authorization has failed, and contains the instance of the policy used to perform the validation:
+The `authorize!` method raises a `KnowItAll::NotAuthorized` exception in case the authorization has failed, and contains the instance of the policy used to perform the validation:
 
 ```ruby
 class ApplicationController < ActionController::Base
