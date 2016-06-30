@@ -4,6 +4,14 @@ module KnowItAll
       @validations ||= {}
     end
 
+    def self.validations=(validations)
+      @validations = validations
+    end
+
+    def self.inherited(subclass)
+      subclass.validations = validations.dup
+    end
+
     def self.assert(method_name, message)
       validations[method_name] = message
     end

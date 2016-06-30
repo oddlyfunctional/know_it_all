@@ -23,23 +23,38 @@ describe KnowItAll::Base do
     end
 
     describe "more than one class extending KnowItAll::Base" do
-      it "doesn't fail due to expecting `name_present?` method" do
-        class AnotherMockPolicy < KnowItAll::Base
-          attr_accessor :title
+      class AnotherMockPolicy < KnowItAll::Base
+        attr_accessor :title
 
-          assert :title_present?, "Title is missing"
+        assert :title_present?, "Title is missing"
 
-          def title_present?
-            title && !title.empty?
-          end
+        def title_present?
+          title && !title.empty?
         end
-        expect { AnotherMockPolicy.new }.wont_raise
+      end
 
+      it "doesn't fail due to expecting `name_present?` method" do
         policy = AnotherMockPolicy.new
         expect(policy.errors).must_equal ["Title is missing"]
 
         policy.title = "Something"
         expect(policy.errors).must_equal []
+      end
+    end
+
+    describe "inheriting a subclass of KnowItAll::Base" do
+      class ChildMockPolicy < MockPolicy
+        attr_accessor :title
+
+        assert :title_present?, "Title is missing"
+
+        def title_present?
+          title && !title.empty?
+        end
+      end
+
+      it "validates both parent's and child's defined assertions" do
+        expect(ChildMockPolicy.new.errors).must_equal ["Name is missing", "Title is missing"]
       end
     end
   end
