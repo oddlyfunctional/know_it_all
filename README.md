@@ -253,7 +253,7 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-Alternatively, you can use the bangless form of the authorization method (`authorize`), which doesn't raise an exception and return an array of errors:
+Alternatively, you can use the bangless form of the authorization method (`authorize`), which doesn't raise an exception and returns the errors in the policy:
 
 ```ruby
 class OrdersController < ApplicationController
@@ -302,7 +302,7 @@ Then use it in your views, passing the appropriate overrides (more about that he
 
 #### Avoiding conflicts in the controller
 
-It's possible that you're already using methods with the same names as the ones in the `KnowItAll` module: `authorize`, `authorized?`, `authorize!`, `policy`, `policy_class`, `policy_name`, `render_not_authorized` or `verify_authorized`. In that case, the solution is to include the module in another class, and use it as a collaborator. The only methods `KnowItAll` needs to find the correct policies are `controller_path` and `action_name`:
+It's possible that you're already using methods with the same names as the ones in the `KnowItAll` module: `authorize`, `authorize?`, `authorize!`, `policy`, `policy_class`, `policy_name`, `render_not_authorized` or `verify_authorized`. In that case, the solution is to include the module in another class, and use it as a collaborator. The only methods `KnowItAll` needs to find the correct policies are `controller_path` and `action_name`:
 
 ```ruby
 class Authorizer
@@ -395,7 +395,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/know_it_all. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/mrodrigues/know_it_all. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
 
 
 ## License
