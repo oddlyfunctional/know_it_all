@@ -2,6 +2,8 @@
 
 # KnowItAll
 
+[![Join the chat at https://gitter.im/mrodrigues/know_it_all](https://badges.gitter.im/mrodrigues/know_it_all.svg)](https://gitter.im/mrodrigues/know_it_all?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 KnowItAll is a small, object-oriented approach to authorization. It knows everything about your application!
 
 More of an architectural pattern for API-focused authorization than properly a dependency, and heavily inspired by [Pundit](https://github.com/elabs/pundit), this gem simply provides a small set of helpers that make applying the pattern easier.
