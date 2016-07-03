@@ -2,6 +2,7 @@
 
 # KnowItAll
 
+[![Gem Version](https://badge.fury.io/rb/know_it_all.svg)](https://badge.fury.io/rb/know_it_all)
 [![Join the chat at https://gitter.im/mrodrigues/know_it_all](https://badges.gitter.im/mrodrigues/know_it_all.svg)](https://gitter.im/mrodrigues/know_it_all?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 KnowItAll is a small, object-oriented approach to authorization. It knows everything about your application!
