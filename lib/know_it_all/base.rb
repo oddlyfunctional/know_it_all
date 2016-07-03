@@ -19,7 +19,13 @@ module KnowItAll
     def errors
       self.class.validations.each
         .select { |method_name, _| !self.send(method_name) }
-        .map { |_, message| message }
+        .map do |_, message|
+          if message.respond_to?(:call)
+            message.call(self)
+          else
+            message
+          end
+        end
     end
   end
 end

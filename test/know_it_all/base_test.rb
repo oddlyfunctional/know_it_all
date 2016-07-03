@@ -3,22 +3,30 @@ require 'test_helper'
 describe KnowItAll::Base do
   describe ".assert" do
     class MockPolicy < KnowItAll::Base
-      attr_accessor :name
+      attr_accessor :name, :status
 
       assert :name_present?, "Name is missing"
+      assert :status_valid?, -> (policy) { "Status #{policy.status.inspect} is invalid" }
 
       def name_present?
         name && !name.empty?
       end
+
+      def status_valid?
+        status == "valid"
+      end
     end
 
     it "adds the message to the errors set when failed" do
-      expect(MockPolicy.new.errors).must_equal ["Name is missing"]
+      policy = MockPolicy.new
+      policy.status = "invalid"
+      expect(policy.errors).must_equal ["Name is missing", 'Status "invalid" is invalid']
     end
 
     it "doesn't add any message if the validation succeeded" do
       policy = MockPolicy.new
       policy.name = "Something"
+      policy.status = "valid"
       expect(policy.errors).must_equal []
     end
 
@@ -54,7 +62,7 @@ describe KnowItAll::Base do
       end
 
       it "validates both parent's and child's defined assertions" do
-        expect(ChildMockPolicy.new.errors).must_equal ["Name is missing", "Title is missing"]
+        expect(ChildMockPolicy.new.errors).must_equal ["Name is missing", "Status nil is invalid", "Title is missing"]
       end
     end
   end
