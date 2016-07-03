@@ -207,6 +207,24 @@ end
 
 The class method `assert` expects a `Symbol` representing the name of a predicate and a `String` containing the error message in case the predicate fails. The default `errors` method returns an array containing the messages for all the assertions that didn't pass.
 
+In case you need to define dynamically the error message (e.g. for internationalization), the `assert` method also accepts any object that responds to `call`, as a lambda. It'll pass the policy itself as an argument:
+
+```ruby
+module OrdersPolicies
+  class Create < KnowItAll::Base
+    attr_reader :cart
+
+    assert :cart_has_minimum?, -> (policy) {
+      I18n.t(:cart_minimum_total_error, total: policy.cart.total)
+    }
+
+    def initialize(cart)
+      @cart = cart
+    end
+  end
+end
+```
+
 ### Using policies
 
 The simplest approach is to include the `KnowItAll` module in the controller you want to perform the validation. For this example, let's make the helpers available to all controllers by including it in the `ApplicationController`:
