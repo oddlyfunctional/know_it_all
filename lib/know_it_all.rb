@@ -33,14 +33,14 @@ module KnowItAll
   end
 
   def policy_class(policy_name: self.policy_name)
-    @policy_class ||= policy_name.constantize
+    @policy_class ||= self.class.const_get(policy_name)
   end
 
   def policy_name(
     controller_path: self.controller_path,
     action_name: self.action_name
   )
-    "#{controller_path.to_s.camelize}#{SUFFIX}::#{action_name.to_s.camelize}"
+    "#{KnowItAll::StringHelper.classify(controller_path)}#{SUFFIX}::#{KnowItAll::StringHelper.classify(action_name)}"
   end
 
   def render_not_authorized(exception)

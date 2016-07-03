@@ -3,7 +3,6 @@ require 'know_it_all'
 
 require 'minitest/autorun'
 require "minitest/reporters"
-require 'active_support/core_ext/string/inflections'
 require 'pry'
 
 Minitest::Reporters.use!
