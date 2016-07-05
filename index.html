@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>KnowItAll by mrodrigues</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>KnowItAll</h1>
+        <h2>Minimalistic authorization focused on APIs</h2>
+        <a href="https://github.com/mrodrigues/know_it_all" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <blockquote>
+<p>Well, actually...</p>
+</blockquote>
+
+<h1>
+<a id="knowitall" class="anchor" href="#knowitall" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>KnowItAll</h1>
+
+<p><a href="https://badge.fury.io/rb/know_it_all"><img src="https://badge.fury.io/rb/know_it_all.svg" alt="Gem Version"></a>
+<a href="https://gitter.im/mrodrigues/know_it_all?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/mrodrigues/know_it_all.svg" alt="Join the chat at https://gitter.im/mrodrigues/know_it_all"></a></p>
+
+<p>KnowItAll is a small, object-oriented approach to authorization. It knows everything about your application!</p>
+
+<p>More of an architectural pattern for API-focused authorization than properly a dependency, and heavily inspired by <a href="https://github.com/elabs/pundit">Pundit</a>, this gem simply provides a small set of helpers that make applying the pattern easier.</p>
+
+<p>If your application needs to validate pre-requisites before performing certain actions, at the same time providing helpful error messages for the API's clients, all that while using regular magic-less Ruby and object oriented design patterns, KnowItAll is your friend.</p>
+
+<h1>
+<a id="table-of-contents" class="anchor" href="#table-of-contents" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Table of Contents</h1>
+
+<ul>
+<li>
+<a href="#knowitall">KnowItAll</a>
+
+<ul>
+<li><a href="#why">Why?</a></li>
+<li><a href="#why-not-just-pundit">Why not just Pundit?</a></li>
+<li><a href="#installation">Installation</a></li>
+<li>
+<a href="#usage">Usage</a>
+
+<ul>
+<li>
+<a href="#creating-policies">Creating policies</a>
+
+<ul>
+<li><a href="#naming-convention">Naming convention</a></li>
+<li><a href="#helper-class">Helper class</a></li>
+</ul>
+</li>
+<li>
+<a href="#using-policies">Using policies</a>
+
+<ul>
+<li><a href="#what-happens-when-not-authorized">What happens when not authorized</a></li>
+<li><a href="#querying-authorizations-in-the-view">Querying authorizations in the view</a></li>
+<li><a href="#avoiding-conflicts-in-the-controller">Avoiding conflicts in the controller</a></li>
+<li><a href="#overrides">Overrides</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#enforcing-authorization-checks">Enforcing authorization checks</a></li>
+<li><a href="#development">Development</a></li>
+<li><a href="#contributing">Contributing</a></li>
+<li><a href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="why" class="anchor" href="#why" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why?</h2>
+
+<p>The assumption made is that each action has its own requirements based on the current context. Some may be related to the current user's permissions in the system, others with the parameters sent, and others yet may even have nothing to do with any input received. Let's say you're building the API for a food delivery app. To be able to checkout, you need to validate the following requirements:</p>
+
+<ul>
+<li>The user must be signed in;</li>
+<li>The user must have a registered address;</li>
+<li>The registered address must be within a determined radius;</li>
+<li>The cart must contain at least $10 in items;</li>
+<li>The chosen items must be available for delivery;</li>
+<li>The store must be open.</li>
+</ul>
+
+<p>It'd be very helpful for a developer consuming this API if, in case of failure, the API returned an appropriate error message explaining exactly what when wrong, instead of an empty <code>403 Forbidden</code>. Performing this manually is easy, but quickly polutes the action's code:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>User must be signed in<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> current_user
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>User must have a registered address<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> current_user.address
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>Registered address is outside the range<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> address_in_range?(current_user.address)
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>Cart must contain at least $10 in items<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> cart_has_minimum?(cart)
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>Some of the items are not available<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> items_available?(cart.items)
+    <span class="pl-k">return</span> error(<span class="pl-s"><span class="pl-pds">"</span>The store is closed<span class="pl-pds">"</span></span>) <span class="pl-k">unless</span> store.open?
+
+    <span class="pl-c"># Here finally starts what the action actually does</span>
+    order <span class="pl-k">=</span> <span class="pl-c1">Order</span>.create(order_params)
+    <span class="pl-k">if</span> order.save
+      render <span class="pl-c1">json:</span> order, <span class="pl-c1">status:</span> <span class="pl-c1">:created</span>
+    <span class="pl-k">else</span>
+      render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> order.errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:unprocessable_entity</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+
+  <span class="pl-k">private</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">error</span>(<span class="pl-smi">message</span>)
+      render <span class="pl-c1">json:</span> { <span class="pl-c1">error:</span> message }, <span class="pl-c1">status:</span> <span class="pl-c1">:forbidden</span>
+    <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>It's much more readable, as well as easier to test and extend, if all of those requirement tests were contained in a proper class:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    policy <span class="pl-k">=</span> <span class="pl-c1">OrdersPolicies</span>::<span class="pl-c1">Create</span>.<span class="pl-k">new</span>(current_user, cart, store)
+    <span class="pl-k">return</span> render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> policy.errors } <span class="pl-k">unless</span> policy.authorize?
+
+    order <span class="pl-k">=</span> <span class="pl-c1">Order</span>.create(order_params)
+    <span class="pl-k">if</span> order.save
+      render <span class="pl-c1">json:</span> order, <span class="pl-c1">status:</span> <span class="pl-c1">:created</span>
+    <span class="pl-k">else</span>
+      render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> order.errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:unprocessable_entity</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>That's exactly the architectural pattern encouraged by this gem. By including a small set of helpers, it makes it extremely simple to perform complex validations and provide helpful feedback through the API.</p>
+
+<h2>
+<a id="why-not-just-pundit" class="anchor" href="#why-not-just-pundit" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why not just Pundit?</h2>
+
+<p>Pundit is great! I've been using it for years and I love it, but its model-focused permissions and structural pattern makes it difficult and awkward to perform validations on scenarios that need multiple arguments and show appropriate error messages for the API's clients. Based on modifications I've made when using Pundit in some projects, I created this gem.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Add this line to your application's Gemfile:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">gem</span> <span class="pl-s"><span class="pl-pds">'</span>know_it_all<span class="pl-pds">'</span></span></pre></div>
+
+<p>And then execute:</p>
+
+<pre><code>$ bundle
+</code></pre>
+
+<p>Or install it yourself as:</p>
+
+<pre><code>$ gem install know_it_all
+</code></pre>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>There are two steps to using this gem: creating and using policies:</p>
+
+<h3>
+<a id="creating-policies" class="anchor" href="#creating-policies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating policies</h3>
+
+<p>A policy is simply a class obeys some rules:</p>
+
+<ul>
+<li>It is initialized with the same arguments that are passed to the <code>authorize</code>, <code>authorize!</code> and <code>authorize?</code> methods in the controller;</li>
+<li>It responds to a method <code>errors</code>;</li>
+<li>Calling <code>errors</code> returns an object that responds to the method <code>empty?</code> and is serializable. It's usually an array, but it could easily be an <code>ActiveModel::Errors</code>.</li>
+</ul>
+
+<p>Here's an example:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">module</span> <span class="pl-en">OrdersPolicies</span>
+  <span class="pl-k">class</span> <span class="pl-en">Create</span>
+    <span class="pl-k">def</span> <span class="pl-en">initialize</span>(<span class="pl-smi">current_user</span>, <span class="pl-smi">cart</span>, <span class="pl-smi">store</span>)
+      <span class="pl-smi">@current_user</span> <span class="pl-k">=</span> current_user
+      <span class="pl-smi">@cart</span> <span class="pl-k">=</span> cart
+      <span class="pl-smi">@store</span> <span class="pl-k">=</span> store
+    <span class="pl-k">end</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">errors</span>
+      <span class="pl-smi">@errors</span> <span class="pl-k">=</span> []
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>User must be signed in<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> <span class="pl-smi">@current_user</span>
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>User must have a registered address<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> <span class="pl-smi">@current_user</span>.address
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>Registered address is outside the range<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> address_in_range?(current_user.address)
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>Cart must contain at least $10 in items<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> cart_has_minimum?(<span class="pl-smi">@cart</span>)
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>Some of the items are not available<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> items_available?(<span class="pl-smi">@cart</span>.items)
+      <span class="pl-smi">@errors</span> <span class="pl-k">&lt;&lt;</span> <span class="pl-s"><span class="pl-pds">"</span>The store is closed<span class="pl-pds">"</span></span> <span class="pl-k">unless</span> <span class="pl-smi">@store</span>.open?
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>Using <code>ActiveModel::Validations</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">module</span> <span class="pl-en">OrdersPolicies</span>
+  <span class="pl-k">class</span> <span class="pl-en">Create</span>
+    <span class="pl-k">include</span> <span class="pl-c1">ActiveModel</span>::<span class="pl-c1">Validations</span>
+
+    validates_presence_of <span class="pl-c1">:current_user</span>, <span class="pl-c1">:address</span>
+    validate <span class="pl-c1">:address_in_range</span>
+    validate <span class="pl-c1">:cart_has_minimum</span>
+    validate <span class="pl-c1">:items_are_available</span>
+    validate <span class="pl-c1">:store_is_open</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">initialize</span>(<span class="pl-smi">current_user</span>, <span class="pl-smi">cart</span>, <span class="pl-smi">store</span>)
+      <span class="pl-smi">@current_user</span> <span class="pl-k">=</span> current_user
+      <span class="pl-smi">@cart</span> <span class="pl-k">=</span> cart
+      <span class="pl-smi">@store</span> <span class="pl-k">=</span> store
+
+      run_validations! <span class="pl-c"># Populates the `ActiveModel::Errors`</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h4>
+<a id="naming-convention" class="anchor" href="#naming-convention" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Naming convention</h4>
+
+<p>The convention <code>KnowItAll</code> uses for defining the name of the constant containing the appropriate policy is the following:</p>
+
+<ul>
+<li>Based on the <code>controller_path</code> method on the controller, it builds a module name by appending the <code>Policies</code> suffix: <code>"orders"</code> becomes <code>"OrdersPolicies"</code> and <code>"admin/dashboard_panel"</code> becomes <code>"Admin::DashboardPanelPolicies"</code>.</li>
+<li>Based on the <code>action_name</code> method on the controller, it builds a class name: <code>"index"</code> becomes <code>"Index"</code>, <code>"increase_inventory"</code> becomes <code>"IncreaseInventory"</code>.</li>
+<li>By appending the class name to the module name, it tries to find that constant: with <code>controller_path == "orders"</code> and <code>action_name == "Index"</code>, it looks for a <code>OrdersPolicies::Index</code> constant.</li>
+</ul>
+
+<p>For more details about how the module and class names are converted, please check the <a href="http://api.rubyonrails.org/classes/ActiveSupport/Inflector.html#method-i-camelize"><code>ActiveSupport::Inflector#camelize</code></a> method.</p>
+
+<h4>
+<a id="helper-class" class="anchor" href="#helper-class" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Helper class</h4>
+
+<p>If you don't want to write your own policy from the scratch, I've also provided a minimalistic base policy:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">module</span> <span class="pl-en">OrdersPolicies</span>
+  <span class="pl-k">class</span> <span class="pl-en">Create<span class="pl-e"> &lt; KnowItAll::Base</span></span>
+    assert <span class="pl-c1">:user_signed_in?</span>, <span class="pl-s"><span class="pl-pds">"</span>User must be signed in<span class="pl-pds">"</span></span> 
+    assert <span class="pl-c1">:address_present?</span>, <span class="pl-s"><span class="pl-pds">"</span>User must have a registered address<span class="pl-pds">"</span></span> 
+    assert <span class="pl-c1">:address_in_range?</span>, <span class="pl-s"><span class="pl-pds">"</span>Registered address is outside the range<span class="pl-pds">"</span></span> 
+    assert <span class="pl-c1">:cart_has_minimum?</span>, <span class="pl-s"><span class="pl-pds">"</span>Cart must contain at least $10 in items<span class="pl-pds">"</span></span> 
+    assert <span class="pl-c1">:items_available?</span>, <span class="pl-s"><span class="pl-pds">"</span>Some of the items are not available<span class="pl-pds">"</span></span> 
+    assert <span class="pl-c1">:store_open?</span>, <span class="pl-s"><span class="pl-pds">"</span>The store is closed<span class="pl-pds">"</span></span> 
+
+    <span class="pl-k">def</span> <span class="pl-en">initialize</span>(<span class="pl-smi">current_user</span>, <span class="pl-smi">cart</span>, <span class="pl-smi">store</span>)
+      <span class="pl-smi">@current_user</span> <span class="pl-k">=</span> current_user
+      <span class="pl-smi">@cart</span> <span class="pl-k">=</span> cart
+      <span class="pl-smi">@store</span> <span class="pl-k">=</span> store
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>The class method <code>assert</code> expects a <code>Symbol</code> representing the name of a predicate and a <code>String</code> containing the error message in case the predicate fails. The default <code>errors</code> method returns an array containing the messages for all the assertions that didn't pass.</p>
+
+<p>In case you need to define dynamically the error message (e.g. for internationalization), the <code>assert</code> method also accepts any object that responds to <code>call</code>, as a lambda. It'll pass the policy itself as an argument:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">module</span> <span class="pl-en">OrdersPolicies</span>
+  <span class="pl-k">class</span> <span class="pl-en">Create<span class="pl-e"> &lt; KnowItAll::Base</span></span>
+    <span class="pl-k">attr_reader</span> <span class="pl-c1">:cart</span>
+
+    assert <span class="pl-c1">:cart_has_minimum?</span>, <span class="pl-k">-</span><span class="pl-k">&gt;</span> (policy) {
+      <span class="pl-c1">I18n</span>.t(<span class="pl-c1">:cart_minimum_total_error</span>, <span class="pl-c1">total:</span> policy.cart.total)
+    }
+
+    <span class="pl-k">def</span> <span class="pl-en">initialize</span>(<span class="pl-smi">cart</span>)
+      <span class="pl-smi">@cart</span> <span class="pl-k">=</span> cart
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h3>
+<a id="using-policies" class="anchor" href="#using-policies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using policies</h3>
+
+<p>The simplest approach is to include the <code>KnowItAll</code> module in the controller you want to perform the validation. For this example, let's make the helpers available to all controllers by including it in the <code>ApplicationController</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>After that, we can use the helpers in any controller that inherits from <code>ApplicationController</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    authorize! current_user, cart, store
+
+    order <span class="pl-k">=</span> <span class="pl-c1">Order</span>.create(order_params)
+    <span class="pl-k">if</span> order.save
+      render <span class="pl-c1">json:</span> order, <span class="pl-c1">status:</span> <span class="pl-c1">:created</span>
+    <span class="pl-k">else</span>
+      render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> order.errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:unprocessable_entity</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h4>
+<a id="what-happens-when-not-authorized" class="anchor" href="#what-happens-when-not-authorized" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What happens when not authorized</h4>
+
+<p>The <code>authorize!</code> method raises a <code>KnowItAll::NotAuthorized</code> exception in case the authorization has failed, and contains the instance of the policy used to perform the validation:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+  rescue_from <span class="pl-c1">KnowItAll</span>::<span class="pl-c1">NotAuthorized</span> <span class="pl-k">do </span>|<span class="pl-smi">exception</span>|
+    render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> exception.policy.errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:forbidden</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>This pattern is so common that I've wrote a method that does exactly that:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+  rescue_from <span class="pl-c1">KnowItAll</span>::<span class="pl-c1">NotAuthorized</span>, <span class="pl-c1">with:</span> <span class="pl-c1">:render_not_authorized</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>Alternatively, you can use the bangless form of the authorization method (<code>authorize</code>), which doesn't raise an exception and returns the errors in the policy:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    errors <span class="pl-k">=</span> authorize current_user, cart, store
+    <span class="pl-k">if</span> errors.empty?
+      order <span class="pl-k">=</span> <span class="pl-c1">Order</span>.create(order_params)
+      <span class="pl-k">if</span> order.save
+        render <span class="pl-c1">json:</span> order, <span class="pl-c1">status:</span> <span class="pl-c1">:created</span>
+      <span class="pl-k">else</span>
+        render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> order.errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:unprocessable_entity</span>
+      <span class="pl-k">end</span>
+    <span class="pl-k">else</span>
+      <span class="pl-k">return</span> render <span class="pl-c1">json:</span> { <span class="pl-c1">errors:</span> errors }, <span class="pl-c1">status:</span> <span class="pl-c1">:forbidden</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h4>
+<a id="querying-authorizations-in-the-view" class="anchor" href="#querying-authorizations-in-the-view" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Querying authorizations in the view</h4>
+
+<p>You can use the predicate <code>authorize?</code> to make decisions based on future authorizations in your views. First you need to make the method available as a helper:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+  helper_method <span class="pl-c1">:authorize?</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>Then use it in your views, passing the appropriate overrides (more about that here):</p>
+
+<div class="highlight highlight-text-html-erb"><pre><span class="pl-pse">&lt;%=</span><span class="pl-s1"> form_for <span class="pl-smi">@order</span> <span class="pl-k">do </span>|<span class="pl-smi">f</span>| </span><span class="pl-pse"><span class="pl-s1">%</span>&gt;</span>
+  <span class="pl-c">&lt;!-- Form fields --&gt;</span>
+
+  <span class="pl-pse">&lt;%=</span><span class="pl-s1"> f.button <span class="pl-s"><span class="pl-pds">"</span>Place order<span class="pl-pds">"</span></span>, <span class="pl-c1">disabled:</span> authorize?(</span>
+<span class="pl-s1">                                          <span class="pl-smi">@current_user</span>,</span>
+<span class="pl-s1">                                          <span class="pl-smi">@cart</span>,</span>
+<span class="pl-s1">                                          <span class="pl-smi">@store</span>,</span>
+<span class="pl-s1">                                          <span class="pl-c1">controller_path:</span> <span class="pl-s"><span class="pl-pds">"</span>orders<span class="pl-pds">"</span></span>,</span>
+<span class="pl-s1">                                          <span class="pl-c1">action_name:</span> <span class="pl-s"><span class="pl-pds">"</span>create<span class="pl-pds">"</span></span></span>
+<span class="pl-s1">                                        ) </span><span class="pl-pse"><span class="pl-s1">%</span>&gt;</span>
+<span class="pl-pse">&lt;%</span><span class="pl-s1"> <span class="pl-k">end</span> </span><span class="pl-pse"><span class="pl-s1">%</span>&gt;</span></pre></div>
+
+<h4>
+<a id="avoiding-conflicts-in-the-controller" class="anchor" href="#avoiding-conflicts-in-the-controller" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Avoiding conflicts in the controller</h4>
+
+<p>It's possible that you're already using methods with the same names as the ones in the <code>KnowItAll</code> module: <code>authorize</code>, <code>authorize?</code>, <code>authorize!</code>, <code>policy</code>, <code>policy_class</code>, <code>policy_name</code>, <code>render_not_authorized</code> or <code>verify_authorized</code>. In that case, the solution is to include the module in another class, and use it as a collaborator. The only methods <code>KnowItAll</code> needs to find the correct policies are <code>controller_path</code> and <code>action_name</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">Authorizer</span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+  <span class="pl-k">attr_reader</span> <span class="pl-c1">:controller_path</span>, <span class="pl-c1">:action_name</span>
+
+  <span class="pl-k">def</span> <span class="pl-en">initialize</span>(<span class="pl-smi">controller</span>)
+    <span class="pl-smi">@controller_path</span> <span class="pl-k">=</span> controller.controller_path
+    <span class="pl-smi">@action_name</span> <span class="pl-k">=</span> controller.action_name
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span>
+
+<span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">protected</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">authorizer</span>
+      <span class="pl-c1">Authorizer</span>.<span class="pl-k">new</span>(<span class="pl-v">self</span>)
+    <span class="pl-k">end</span>
+<span class="pl-k">end</span>
+
+<span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    authorizer.authorize! current_user, cart, store
+
+    <span class="pl-c"># Action's code here</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>In that case, I've made available a <code>KnowItAll::Authorizer</code> class that does exactly that:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">protected</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">authorizer</span>
+      <span class="pl-c1">KnowItAll</span>::<span class="pl-c1">Authorizer</span>.<span class="pl-k">new</span>(<span class="pl-v">self</span>)
+    <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<h4>
+<a id="overrides" class="anchor" href="#overrides" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overrides</h4>
+
+<p>It's possible to override any of the methods <code>KnowItAll</code> uses to define the appropriate policy. You can do that in the controller:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    authorize! current_user, cart, store
+
+    <span class="pl-c"># Action's code here</span>
+  <span class="pl-k">end</span>
+
+  <span class="pl-k">def</span> <span class="pl-en">policy_name</span>
+    <span class="pl-s"><span class="pl-pds">"</span>OrdersPolicies::Checkout<span class="pl-pds">"</span></span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>Or when calling the <code>authorize</code>, <code>authorize?</code> or <code>authorize!</code> methods:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">OrdersController<span class="pl-e"> &lt; ApplicationController</span></span>
+  <span class="pl-k">def</span> <span class="pl-en">create</span>
+    authorize! current_user, cart, store, <span class="pl-c1">policy_name:</span> <span class="pl-s"><span class="pl-pds">"</span>OrdersPolicies::Checkout<span class="pl-pds">"</span></span>
+
+    <span class="pl-c"># Action's code here</span>
+  <span class="pl-k">end</span>
+<span class="pl-k">end</span></pre></div>
+
+<p>The available overrides are: <code>controller_path</code>, <code>action_name</code>, <code>policy_name</code>, <code>policy_class</code> and <code>policy</code> (instance of the policy).</p>
+
+<h2>
+<a id="enforcing-authorization-checks" class="anchor" href="#enforcing-authorization-checks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Enforcing authorization checks</h2>
+
+<p>While developing a simple feature, it's easy to forget to perform an authorization check. It's helpful during development to know when you forget it, so I've provided a <code>verify_authorized</code> method that raises a <code>KnowItAll::AuthorizationNotPerformedError</code> when there were no calls to any one of the authorization methods: <code>authorize</code>, <code>authorize?</code> or <code>authorize!</code>:</p>
+
+<div class="highlight highlight-source-ruby"><pre><span class="pl-k">class</span> <span class="pl-en">ApplicationController<span class="pl-e"> &lt; ActionController::Base</span></span>
+  <span class="pl-k">include</span> <span class="pl-c1">KnowItAll</span>
+  after_action <span class="pl-c1">:verify_authorized</span>
+<span class="pl-k">end</span></pre></div>
+
+<h2>
+<a id="development" class="anchor" href="#development" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Development</h2>
+
+<p>After checking out the repo, run <code>bin/setup</code> to install dependencies. Then, run <code>rake test</code> to run the tests. You can also run <code>bin/console</code> for an interactive prompt that will allow you to experiment.</p>
+
+<p>To install this gem onto your local machine, run <code>bundle exec rake install</code>. To release a new version, update the version number in <code>version.rb</code>, and then run <code>bundle exec rake release</code>, which will create a git tag for the version, push git commits and tags, and push the <code>.gem</code> file to <a href="https://rubygems.org">rubygems.org</a>.</p>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>Bug reports and pull requests are welcome on GitHub at <a href="https://github.com/mrodrigues/know_it_all">https://github.com/mrodrigues/know_it_all</a>. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the <a href="contributor-covenant.org">Contributor Covenant</a> code of conduct.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>The gem is available as open source under the terms of the <a href="http://opensource.org/licenses/MIT">MIT License</a>.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/mrodrigues/know_it_all/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/mrodrigues/know_it_all/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/mrodrigues/know_it_all"></a> is maintained by <a href="https://github.com/mrodrigues">mrodrigues</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
