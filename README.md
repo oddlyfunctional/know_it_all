@@ -28,6 +28,8 @@ Table of Contents
         * [Avoiding conflicts in the controller](#avoiding-conflicts-in-the-controller)
         * [Overrides](#overrides)
     * [Enforcing authorization checks](#enforcing-authorization-checks)
+    * [Get help](#get-help)
+    * [Alternatives](#alternatives)
     * [Development](#development)
     * [Contributing](#contributing)
     * [License](#license)
@@ -118,11 +120,11 @@ There are two steps to using this gem: creating and using policies:
 
 ### Creating policies
 
-A policy is simply a class obeys some rules:
+The core of this gem, policies are regular Ruby classes that perform some validation and obey some rules:
 
 * It is initialized with the same arguments that are passed to the `authorize`, `authorize!` and `authorize?` methods in the controller;
 * It responds to a method `errors`;
-* Calling `errors` returns an object that responds to the method `empty?` and is serializable. It's usually an array, but it could easily be an `ActiveModel::Errors`.
+* Calling `errors` returns an object that responds to the method `empty?` and is serializable (so you can render it as the response to the request). It's usually an array of `String`s, but it could easily be an `ActiveModel::Errors`.
 
 Here's an example:
 
@@ -148,7 +150,7 @@ module OrdersPolicies
 end
 ```
 
-Using `ActiveModel::Validations`:
+Notice that I didn't include any module or extend from any class here. `KnowItAll` will simply infer the name of the class (based on the [Naming convention](#naming-convention)) and instantiate it, even if it's a PORO. Now, using `ActiveModel::Validations`:
 
 ```ruby
 module OrdersPolicies
@@ -407,6 +409,14 @@ class ApplicationController < ActionController::Base
   after_action :verify_authorized
 end
 ```
+
+## Get help
+
+Follow me on [Twitter](https://twitter.com/know_it_all_gem) or chat with me on [Gitter](https://gitter.im/mrodrigues/know_it_all)! :)
+
+## Alternatives
+
+As I said in the beginning, this project is heavily inspired by [Pundit](https://github.com/elabs/pundit), so obviously it is an excellent alternative. I've also used for several years the [CanCan](https://github.com/ryanb/cancan) gem, but it's been abandoned since then; the [CanCanCan](https://github.com/CanCanCommunity/cancancan) gem is a continuation that seems to be thriving. For more alternatives, check [The Ruby Toolbox](https://www.ruby-toolbox.com/categories/rails_authorization) page.
 
 ## Development
 
