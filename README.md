@@ -19,6 +19,9 @@ Table of Contents
     * [Why?](#why)
     * [Why not just Pundit?](#why-not-just-pundit)
     * [Installation](#installation)
+      * [Generators](#generators)
+        * [Install](#install)
+        * [Policy](#policy)
     * [Usage](#usage)
       * [Creating policies](#creating-policies)
         * [Naming convention](#naming-convention)
@@ -114,6 +117,36 @@ And then execute:
 Or install it yourself as:
 
     $ gem install know_it_all
+
+Then include `KnowItAll` in your application controller:
+
+```ruby
+class ApplicationController < ActionController::Base
+  include KnowItAll
+end
+```
+
+### Generators
+
+#### Install
+
+When adding the gem to your application, you can optionally run:
+
+```bash
+rails generate know_it_all:install
+```
+
+This will include the `KnowItAll` module in your application controller and create a `ApplicationPolicy`, which you can use to define some defaults for your policies.
+
+#### Policy
+
+To create a new policy, you can use the following generator:
+
+```bash
+rails generate know_it_all:policy orders index create update destroy
+```
+
+This will create, in addition to one policy file for each action (`app/policies/orders_policies/index.rb`, `app/policies/orders_policies/create.rb`, etc.), a `app/policies/stores_policy.rb` file containing both the `StoresPolicies` module declaration and a `StoresPolicies::Base` class to share common behaviors specific to that controller's policies.
 
 ## Usage
 

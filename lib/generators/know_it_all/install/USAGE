@@ -1,0 +1,11 @@
+Description:
+    Installs KnowItAll in the current application
+
+Example:
+    rails generate know_it_all:install
+
+    This will create:
+        app/policies/application_policy.rb
+    
+    And add the KnowItAll module to:
+        app/controllers/application_controller.rb

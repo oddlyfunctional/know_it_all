@@ -1,0 +1,9 @@
+Description:
+    Generates a new policy
+
+Example:
+    rails generate know_it_all:policy controller_name action_name [first_validation first_message second_validation second_message...]
+
+    This will create:
+        app/policies/controller_name_policies.rb
+        app/policies/controller_name_policies/action_name.rb
