@@ -1,5 +1,11 @@
 # Change Log
 
+## [v0.1.5](https://github.com/mrodrigues/know_it_all/tree/v0.1.5) (2016-08-17)
+[Full Changelog](https://github.com/mrodrigues/know_it_all/compare/v0.1.4...v0.1.5)
+
+- Add Rails generators for installing the gem and creating policies
+- Deprecating `assert` in favor of `validate`
+
 ## [v0.1.4](https://github.com/mrodrigues/know_it_all/tree/v0.1.4) (2016-07-03)
 [Full Changelog](https://github.com/mrodrigues/know_it_all/compare/v0.1.3...v0.1.4)
 
