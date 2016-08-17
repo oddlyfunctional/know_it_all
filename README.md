@@ -225,12 +225,12 @@ If you don't want to write your own policy from the scratch, I've also provided 
 ```ruby
 module OrdersPolicies
   class Create < KnowItAll::Base
-    assert :user_signed_in?, "User must be signed in" 
-    assert :address_present?, "User must have a registered address" 
-    assert :address_in_range?, "Registered address is outside the range" 
-    assert :cart_has_minimum?, "Cart must contain at least $10 in items" 
-    assert :items_available?, "Some of the items are not available" 
-    assert :store_open?, "The store is closed" 
+    validate :user_signed_in?, "User must be signed in"
+    validate :address_present?, "User must have a registered address"
+    validate :address_in_range?, "Registered address is outside the range"
+    validate :cart_has_minimum?, "Cart must contain at least $10 in items"
+    validate :items_available?, "Some of the items are not available"
+    validate :store_open?, "The store is closed"
 
     def initialize(current_user, cart, store)
       @current_user = current_user
@@ -241,16 +241,16 @@ module OrdersPolicies
 end
 ```
 
-The class method `assert` expects a `Symbol` representing the name of a predicate and a `String` containing the error message in case the predicate fails. The default `errors` method returns an array containing the messages for all the assertions that didn't pass.
+The class method `validate` expects a `Symbol` representing the name of a predicate and a `String` containing the error message in case the predicate fails. The default `errors` method returns an array containing the messages for all the validations that didn't pass.
 
-In case you need to define dynamically the error message (e.g. for internationalization), the `assert` method also accepts any object that responds to `call`, as a lambda. It'll pass the policy itself as an argument:
+In case you need to define dynamically the error message (e.g. for internationalization), the `validate` method also accepts any object that responds to `call`, as a lambda. It'll pass the policy itself as an argument:
 
 ```ruby
 module OrdersPolicies
   class Create < KnowItAll::Base
     attr_reader :cart
 
-    assert :cart_has_minimum?, -> (policy) {
+    validate :cart_has_minimum?, -> (policy) {
       I18n.t(:cart_minimum_total_error, total: policy.cart.total)
     }
 

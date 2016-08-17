@@ -1,12 +1,12 @@
 require 'test_helper'
 
 describe KnowItAll::Base do
-  describe ".assert" do
+  describe ".validate" do
     class MockPolicy < KnowItAll::Base
       attr_accessor :name, :status
 
-      assert :name_present?, "Name is missing"
-      assert :status_valid?, -> (policy) { "Status #{policy.status.inspect} is invalid" }
+      validate :name_present?, "Name is missing"
+      validate :status_valid?, -> (policy) { "Status #{policy.status.inspect} is invalid" }
 
       def name_present?
         name && !name.empty?
@@ -34,7 +34,7 @@ describe KnowItAll::Base do
       class AnotherMockPolicy < KnowItAll::Base
         attr_accessor :title
 
-        assert :title_present?, "Title is missing"
+        validate :title_present?, "Title is missing"
 
         def title_present?
           title && !title.empty?
@@ -54,14 +54,14 @@ describe KnowItAll::Base do
       class ChildMockPolicy < MockPolicy
         attr_accessor :title
 
-        assert :title_present?, "Title is missing"
+        validate :title_present?, "Title is missing"
 
         def title_present?
           title && !title.empty?
         end
       end
 
-      it "validates both parent's and child's defined assertions" do
+      it "validates both parent's and child's defined validations" do
         expect(ChildMockPolicy.new.errors).must_equal ["Name is missing", "Status nil is invalid", "Title is missing"]
       end
     end

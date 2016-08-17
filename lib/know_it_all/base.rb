@@ -12,7 +12,13 @@ module KnowItAll
       subclass.validations = validations.dup
     end
 
-    def self.assert(method_name, message)
+    # <b>DEPRECATED:</b> Please use <tt>validate</tt> instead.
+    def self.assert(*args)
+      warn "[DEPRECATION] `assert` is deprecated. Please use `validate` instead."
+      validate(*args)
+    end
+
+    def self.validate(method_name, message)
       validations[method_name] = message
     end
 
