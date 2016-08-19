@@ -6,12 +6,12 @@ require 'know_it_all/version'
 Gem::Specification.new do |spec|
   spec.name          = "know_it_all"
   spec.version       = KnowItAll::VERSION
-  spec.authors       = ["mrodrigues"]
+  spec.authors       = ["oddlyfunctional"]
   spec.email         = ["mrodrigues.uff@gmail.com"]
 
   spec.summary       = %q{OO authorization for APIs}
   spec.description   = %q{Minimalistic authorization focused on APIs}
-  spec.homepage      = "https://github.com/mrodrigues/know_it_all"
+  spec.homepage      = "https://github.com/oddlyfunctional/know_it_all"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
