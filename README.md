@@ -3,7 +3,7 @@
 # KnowItAll
 
 [![Gem Version](https://badge.fury.io/rb/know_it_all.svg)](https://badge.fury.io/rb/know_it_all)
-[![Join the chat at https://gitter.im/mrodrigues/know_it_all](https://badges.gitter.im/mrodrigues/know_it_all.svg)](https://gitter.im/mrodrigues/know_it_all?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/oddlyfunctional/know_it_all](https://badges.gitter.im/oddlyfunctional/know_it_all.svg)](https://gitter.im/oddlyfunctional/know_it_all?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Twitter Follow](https://img.shields.io/twitter/follow/know_it_all_gem.svg?style=social&label=Follow&maxAge=2592000)](https://twitter.com/know_it_all_gem)
 
 KnowItAll is a small, object-oriented approach to authorization. It knows everything about your application!
@@ -446,7 +446,7 @@ end
 
 ## Get help
 
-Follow me on [Twitter](https://twitter.com/know_it_all_gem) or chat with me on [Gitter](https://gitter.im/mrodrigues/know_it_all)! :)
+Follow me on [Twitter](https://twitter.com/know_it_all_gem) or chat with me on [Gitter](https://gitter.im/oddlyfunctional/know_it_all)! :)
 
 ## Alternatives
 
