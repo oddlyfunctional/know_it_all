@@ -62,6 +62,10 @@ module KnowItAll
     def initialize(policy)
       self.policy = policy
     end
+
+    def to_s
+      "KnowItAll::NotAuthorized: #{policy.errors.to_s}"
+    end
   end
 
   class AuthorizationNotPerformedError < StandardError; end
