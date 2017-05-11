@@ -18,13 +18,17 @@ module KnowItAll
       validate(*args)
     end
 
-    def self.validate(method_name, message)
+    def self.validate(method_name, message = nil)
+      if message.nil? && defined?(I18n)
+        class_names = StringHelper.underscore(self.to_s).split("/").reverse
+        message = I18n.t(["policies", *class_names, method_name].join("."))
+      end
       validations[method_name] = message
     end
 
     def errors
       self.class.validations.each
-        .select { |method_name, _| !self.send(method_name) }
+        .reject { |method_name, _| self.send(method_name) }
         .map do |_, message|
           if message.respond_to?(:call)
             message.call(self)

@@ -1,0 +1,5 @@
+en:
+  bla: "asdas"
+  policies:
+    mock_policy:
+      from_i18n?: "Message from I18n"

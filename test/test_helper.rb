@@ -7,6 +7,10 @@ require 'pry'
 
 Minitest::Reporters.use!
 
+require 'i18n'
+I18n.backend.load_translations("test/fixtures/en.yml")
+I18n.config.available_locales = :en
+
 module MiniTest::Assertions
   def refute_raises(*args)
     begin

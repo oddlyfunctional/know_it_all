@@ -3,30 +3,35 @@ require 'test_helper'
 describe KnowItAll::Base do
   describe ".validate" do
     class MockPolicy < KnowItAll::Base
-      attr_accessor :name, :status
+      attr_accessor :from_string, :from_proc, :from_i18n
 
-      validate :name_present?, "Name is missing"
-      validate :status_valid?, -> (policy) { "Status #{policy.status.inspect} is invalid" }
+      validate :from_string?, "Message from String"
+      validate :from_proc?, -> (policy) { "Message from Proc: #{policy.class}" }
+      validate :from_i18n?
 
-      def name_present?
-        name && !name.empty?
+      def from_string?
+        from_string
       end
 
-      def status_valid?
-        status == "valid"
+      def from_proc?
+        from_proc
+      end
+
+      def from_i18n?
+        from_i18n
       end
     end
 
     it "adds the message to the errors set when failed" do
       policy = MockPolicy.new
-      policy.status = "invalid"
-      expect(policy.errors).must_equal ["Name is missing", 'Status "invalid" is invalid']
+      expect(policy.errors).must_equal ["Message from String", "Message from Proc: MockPolicy", "Message from I18n"]
     end
 
     it "doesn't add any message if the validation succeeded" do
       policy = MockPolicy.new
-      policy.name = "Something"
-      policy.status = "valid"
+      policy.from_string = true
+      policy.from_proc = true
+      policy.from_i18n = true
       expect(policy.errors).must_equal []
     end
 
@@ -62,7 +67,7 @@ describe KnowItAll::Base do
       end
 
       it "validates both parent's and child's defined validations" do
-        expect(ChildMockPolicy.new.errors).must_equal ["Name is missing", "Status nil is invalid", "Title is missing"]
+        expect(ChildMockPolicy.new.errors).must_equal ["Message from String", "Message from Proc: ChildMockPolicy", "Message from I18n", "Title is missing"]
       end
     end
   end
