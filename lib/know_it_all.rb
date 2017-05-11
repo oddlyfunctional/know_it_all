@@ -33,7 +33,7 @@ module KnowItAll
   end
 
   def policy_class(policy_name: self.policy_name)
-    @policy_class ||= self.class.const_get(policy_name)
+    @policy_class = self.class.const_get(policy_name)
   end
 
   def policy_name(
