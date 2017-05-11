@@ -20,7 +20,7 @@ module KnowItAll
 
     def self.validate(method_name, message = nil)
       if message.nil? && defined?(I18n)
-        class_names = StringHelper.underscore(self.to_s).split("/").reverse
+        class_names = StringHelper.underscore(self.to_s).split("/")
         message = I18n.t(["policies", *class_names, method_name].join("."))
       end
       validations[method_name] = message

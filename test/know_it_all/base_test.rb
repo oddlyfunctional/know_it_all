@@ -2,33 +2,35 @@ require 'test_helper'
 
 describe KnowItAll::Base do
   describe ".validate" do
-    class MockPolicy < KnowItAll::Base
-      attr_accessor :from_string, :from_proc, :from_i18n
+    module MockPolicies
+      class MockPolicy < KnowItAll::Base
+        attr_accessor :from_string, :from_proc, :from_i18n
 
-      validate :from_string?, "Message from String"
-      validate :from_proc?, -> (policy) { "Message from Proc: #{policy.class}" }
-      validate :from_i18n?
+        validate :from_string?, "Message from String"
+        validate :from_proc?, -> (policy) { "Message from Proc: #{policy.class}" }
+        validate :from_i18n?
 
-      def from_string?
-        from_string
-      end
+        def from_string?
+          from_string
+        end
 
-      def from_proc?
-        from_proc
-      end
+        def from_proc?
+          from_proc
+        end
 
-      def from_i18n?
-        from_i18n
+        def from_i18n?
+          from_i18n
+        end
       end
     end
 
     it "adds the message to the errors set when failed" do
-      policy = MockPolicy.new
-      expect(policy.errors).must_equal ["Message from String", "Message from Proc: MockPolicy", "Message from I18n"]
+      policy = MockPolicies::MockPolicy.new
+      expect(policy.errors).must_equal ["Message from String", "Message from Proc: MockPolicies::MockPolicy", "Message from I18n"]
     end
 
     it "doesn't add any message if the validation succeeded" do
-      policy = MockPolicy.new
+      policy = MockPolicies::MockPolicy.new
       policy.from_string = true
       policy.from_proc = true
       policy.from_i18n = true
@@ -56,7 +58,7 @@ describe KnowItAll::Base do
     end
 
     describe "inheriting a subclass of KnowItAll::Base" do
-      class ChildMockPolicy < MockPolicy
+      class ChildMockPolicy < MockPolicies::MockPolicy
         attr_accessor :title
 
         validate :title_present?, "Title is missing"
